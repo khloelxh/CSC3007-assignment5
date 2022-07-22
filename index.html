@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>Information Visualization - Assignment 5</title>
+    <style>
+        body {
+            font-family: "Lato", sans-serif
+        }
+
+        svg text {
+            font-size: small;
+            font-family: "Lato", sans-serif
+        }
+
+        .button-1 {
+            background-color: #EA4C89;
+            border-radius: 8px;
+            border-style: none;
+            box-sizing: border-box;
+            color: #FFFFFF;
+            cursor: pointer;
+            display: inline-block;
+            font-family: "Haas Grot Text R Web", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            height: 40px;
+            line-height: 20px;
+            list-style: none;
+            margin: 0;
+            outline: none;
+            padding: 10px 16px;
+            position: relative;
+            text-align: center;
+            text-decoration: none;
+            transition: color 100ms;
+            vertical-align: baseline;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        .button-1:hover,
+        .button-1:focus {
+            background-color: #F082AC;
+        }
+
+
+        #map {
+            width: 1000px;
+            height: 600px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Load CSS -->
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <!-- Load d3 script -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-legend/2.25.6/d3-legend.js"></script>
+
+    <!-- Navbar -->
+    <div class="w3-top">
+        <div class="w3-bar w3-black w3-card">
+            <a class="w3-bar-item w3-button w3-padding-large w3-hide-medium w3-hide-large w3-right"
+                href="javascript:void(0)" onclick="myFunction()" title="Toggle Navigation Menu"><i
+                    class="fa fa-bars"></i></a>
+            <a href="#" class="w3-bar-item w3-button w3-padding-large">Geospatial Visualization</a>
+        </div>
+    </div>
+    </div>
+    </div>
+
+    <!-- Page content -->
+    <div class="w3-content" style="max-width:2000px; margin-top:20px;">
+
+
+        <!-- The Start Section -->
+        <div class="w3-container w3-content w3-center w3-padding-64" style="max-width:1000px" id="band">
+            <h2 class="w3-wide">Geospatial Visualization of PSI Levels</h2>
+            <p class="w3-opacity"><i>Assignment 5</i></p>
+            <p class="w3-opacity">Hover to view region, and click to view PSI level</p>
+            <div class="w3-row w3-padding-32">
+
+                <!-- Define the map  -->
+                <div id="map"></div>
+
+            </div>
+        </div>
+</body>
+
+<!-- Using leaflet -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.3/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.8.0/dist/leaflet.css"
+    integrity="sha512-hoalWLoI8r4UszCkZ5kL8vayOGVae1oxXe/2A4AO6J9+580uKHDO3JdHb7NzwwzK5xr/Fs0W40kiNHxM9vyTtQ=="
+    crossorigin="" />
+<script src="https://cdn.onemap.sg/leaflet/onemap-leaflet.js"></script>
+<script src="https://unpkg.com/leaflet@1.8.0/dist/leaflet.js"
+    integrity="sha512-BB3hKbKWOc9Ez/TAwyWxNXeoV9c1v6FIeYiBieIWkpLjauysF18NzgR1MBNBXf8/KABdlkX68nAhlwcDFLGPCQ=="
+    crossorigin=""></script>
+
+<script>
+    // Load external data
+    fetch('https://api.data.gov.sg/v1/environment/psi').then(
+        response => {
+            response.json().then(
+                data => {
+                    let region_metadata = data.region_metadata
+                    let psi_24_readings = data.items[0].readings.psi_twenty_four_hourly
+                    console.log(data.region_metadata)
+                    // console.log(psi_24_readings)
+
+                    // Create tile layer
+                    var center = L.bounds([1.56073, 104.11475], [1.16, 103.502]).getCenter()
+                    var map = L.map('map').setView([center.x, center.y], 12)
+
+                    map.setMaxBounds([
+                        [1.56073, 104.1147],
+                        [1.16, 103.502],
+                    ])
+                    var basemap = L.tileLayer(
+                        'https://maps-{s}.onemap.sg/v3/Default/{z}/{x}/{y}.png',
+                        {
+                            detectRetina: true,
+                            maxZoom: 18,
+                            minZoom: 11,
+                            //Do not remove this attribution
+                            attribution:
+                                '<img src="https://www.onemap.gov.sg/docs/maps/images/oneMap64-01.png" style="height:20px;width:20px;"/> OneMap | Map data &copy; contributors, <a href="http://SLA.gov.sg">Singapore Land Authority</a>',
+                        }
+                    )
+
+                    basemap.addTo(map)
+
+                    // Iterate through to get region name, psi level and lat long coordinates
+                    for (item in region_metadata) {
+
+                        // region name N,S,E,W,N
+                        let region_name = region_metadata[item].name
+
+                        // lat long
+                        let lat = region_metadata[item].label_location.latitude
+                        let long = region_metadata[item].label_location.longitude
+
+                        if (region_metadata[item][name] != 'national') {
+                            // psi level
+                            psilevel = psi_24_readings[region_name]
+                            var group = addCircle(region_name, lat, long, psilevel)
+                        }
+                    }
+
+                    // Function to add circles to map
+                    function addCircle(region_name, lat, long, psilevel) {
+                        // console.log(region_name)
+                        // console.log(lat)
+                        // console.log(long)
+                        // console.log(psilevel)
+
+                        var circle = L.circle([lat, long], {
+                            color: '#FF33A5',
+                            fillColor: '#FA8FCB',
+                            fillOpacity: 0.5,
+                            radius: 1000
+                        }).addTo(map)
+
+                        function customTip() {
+                            this.unbindTooltip();
+                            if (!this.isPopupOpen()) this.bindTooltip('REGION: ' + region_name).openTooltip();
+                        }
+
+                        function customPop() {
+                            this.unbindTooltip();
+                        }
+
+                        var marker = L.marker([lat, long]).addTo(map)
+                        // marker.bindTooltip(region_name + 
+                        // "PSI LEVEL:" + psilevel.toString(), {
+                        //     permanent: false,
+                        // })
+                        marker.bindPopup('PSI LEVEL: ' + psilevel);
+                        marker.on('mouseover', customTip);
+                        marker.on('click', customPop);
+                        return (group)
+                    }
+                }
+            )
+        }
+    )
+
+
+
+
+</script>
+
+<!-- Footer -->
+<footer class="w3-container w3-padding-100 w3-center w3-opacity w3-light-grey w3-small">
+    <p>Khloe Lim Xin Hui 1901865</p>
+    <p class="w3-small">GitHub link <a href="https://github.com/khloelxh/CSC3007-assignment5/" target="_blank">here</a>
+    </p>
+</footer>
+
+</html>
